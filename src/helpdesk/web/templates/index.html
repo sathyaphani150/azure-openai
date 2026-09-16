@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Azure OpenAI IT Helpdesk demonstration">
+  <title>IT Helpdesk Copilot</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">AZURE OPENAI · GROUNDED SUPPORT</p>
+      <h1>IT Helpdesk Copilot</h1>
+      <p class="subtitle">Resolve common IT issues with cited knowledge, visual diagnosis, and guided troubleshooting.</p>
+    </div>
+    <div id="system-status" class="status">Checking system…</div>
+  </header>
+
+  <main>
+    <nav class="tabs" aria-label="Helpdesk tools">
+      <button class="tab active" data-panel="ask">Ask IT</button>
+      <button class="tab" data-panel="vision">Screenshot</button>
+      <button class="tab" data-panel="guide">Guide</button>
+      <button class="tab" data-panel="classify">Classify</button>
+      <button class="tab" data-panel="roles">Prompt roles</button>
+    </nav>
+
+    <section id="ask" class="panel active">
+      <div class="panel-copy"><span class="step">01</span><div><h2>Ask the knowledge base</h2><p>Answers are constrained to the seven IT support documents and include retrieval evidence.</p></div></div>
+      <form data-endpoint="/api/questions" data-json-field="question">
+        <label for="question">What can we help with?</label>
+        <textarea id="question" required minlength="3" placeholder="My VPN disconnects after a few minutes. What should I check?"></textarea>
+        <button type="submit">Find an answer <span>→</span></button>
+      </form>
+      <div class="output" aria-live="polite"></div>
+    </section>
+
+    <section id="vision" class="panel">
+      <div class="panel-copy"><span class="step">02</span><div><h2>Analyze an error screenshot</h2><p>PNG, JPEG, or WebP up to the configured upload limit. Secrets are not logged.</p></div></div>
+      <form data-upload="true" data-endpoint="/api/screenshots/analyze">
+        <label for="image">Choose screenshot</label>
+        <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" required>
+        <button type="submit">Analyze screenshot <span>→</span></button>
+      </form>
+      <div class="output" aria-live="polite"></div>
+    </section>
+
+    <section id="guide" class="panel">
+      <div class="panel-copy"><span class="step">03</span><div><h2>Generate a troubleshooting guide</h2><p>Create a repeatable, grounded sequence with verification and escalation.</p></div></div>
+      <form data-endpoint="/api/guides" data-json-field="issue">
+        <label for="issue">Describe the issue</label>
+        <textarea id="issue" required minlength="3" placeholder="Teams opens but calls have no audio."></textarea>
+        <button type="submit">Generate guide <span>→</span></button>
+      </form>
+      <div class="output" aria-live="polite"></div>
+    </section>
+
+    <section id="classify" class="panel">
+      <div class="panel-copy"><span class="step">04</span><div><h2>Compare classification prompts</h2><p>See zero-shot and few-shot results side by side against one fixed taxonomy.</p></div></div>
+      <form data-endpoint="/api/classifications/compare" data-json-field="issue">
+        <label for="classification-issue">Issue description</label>
+        <textarea id="classification-issue" required minlength="3" placeholder="Outlook keeps asking for my password and mail will not sync."></textarea>
+        <button type="submit">Compare methods <span>→</span></button>
+      </form>
+      <div class="output" aria-live="polite"></div>
+    </section>
+
+    <section id="roles" class="panel">
+      <div class="panel-copy"><span class="step">05</span><div><h2>Inspect message roles</h2><p>Demonstrates how system policy, a user turn, and an assistant example shape the next response.</p></div></div>
+      <form data-endpoint="/api/prompts/roles/demo" data-json-field="question">
+        <label for="role-question">Follow-up question</label>
+        <textarea id="role-question" required minlength="3" placeholder="What information should I send to IT if that does not work?"></textarea>
+        <button type="submit">Run role demo <span>→</span></button>
+      </form>
+      <div class="output" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer><span>Grounded by your IT knowledge base</span><span>Do not submit passwords, MFA codes, or secrets</span></footer>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
+
