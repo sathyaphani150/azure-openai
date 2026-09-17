@@ -13,10 +13,10 @@ from azure.identity.aio import (
 )
 from openai import AsyncOpenAI
 
-from helpdesk.clients.protocols import AITextResponse
+from helpdesk.clients.protocols import AITextResponse, AIWebSearchResponse
 from helpdesk.config import Settings
 from helpdesk.errors import AppError, ConfigurationError
-from helpdesk.schemas import UsageInfo
+from helpdesk.schemas import SourceReference, UsageInfo
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +239,77 @@ class AzureOpenAIProvider:
             temperature=0.1,
         )
 
+    @staticmethod
+    def _parse_web_search_response(response: object) -> tuple[str, list[SourceReference]]:
+        text = getattr(response, "output_text", "") or ""
+        sources: list[SourceReference] = []
+        seen_urls: set[str] = set()
+
+        output_items = getattr(response, "output", []) or []
+        for item in output_items:
+            if getattr(item, "type", None) == "message":
+                for content in getattr(item, "content", []) or []:
+                    if getattr(content, "type", None) == "output_text":
+                        annotations = getattr(content, "annotations", []) or []
+                        for ann in annotations:
+                            url = getattr(ann, "url", None)
+                            title = getattr(ann, "title", None) or url
+                            if url and url not in seen_urls:
+                                seen_urls.add(url)
+                                source_label = (
+                                    f"Web Search: {title}"
+                                    if title and title != url
+                                    else f"Web Search: {url}"
+                                )
+                                sources.append(
+                                    SourceReference(
+                                        source=source_label,
+                                        page=None,
+                                        score=1.0,
+                                        excerpt=f"URL: {url}",
+                                    )
+                                )
+
+        if not sources and text:
+            import re
+
+            links = re.findall(r"\[([^\]]+)\]\((https?://[^\s\)]+)\)", text)
+            for title, url in links:
+                if url not in seen_urls:
+                    seen_urls.add(url)
+                    sources.append(
+                        SourceReference(
+                            source=f"Web Search: {title}",
+                            page=None,
+                            score=1.0,
+                            excerpt=f"URL: {url}",
+                        )
+                    )
+
+        return text, sources
+
+    async def web_search(self, query: str) -> AIWebSearchResponse:
+        model = self.settings.azure_openai_chat_deployment
+
+        async def operation() -> object:
+            return await self.client.responses.create(
+                model=model,
+                tools=[{"type": "web_search"}],
+                input=query,
+                instructions=(
+                    "You are an IT support assistant. Answer the user's question using ONLY "
+                    "the retrieved web search results. Never fabricate sources, URLs, citations, or facts. "
+                    "If web search cannot find reliable information to answer the question, "
+                    "explicitly state that reliable information could not be found."
+                ),
+            )
+
+        response = await self._with_retry(operation)
+        text, sources = self._parse_web_search_response(response)
+        return AIWebSearchResponse(text=text, sources=sources, usage=self._usage(response))
+
     async def close(self) -> None:
         await self.client.close()
         if self._credential:
             await self._credential.close()
+

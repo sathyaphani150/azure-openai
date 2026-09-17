@@ -23,7 +23,6 @@
       <button class="tab" data-panel="vision">Screenshot</button>
       <button class="tab" data-panel="guide">Guide</button>
       <button class="tab" data-panel="classify">Classify</button>
-      <button class="tab" data-panel="roles">Prompt roles</button>
     </nav>
 
     <section id="ask" class="panel active">
@@ -66,19 +65,9 @@
       <div class="output" aria-live="polite"></div>
     </section>
 
-    <section id="roles" class="panel">
-      <div class="panel-copy"><span class="step">05</span><div><h2>Inspect message roles</h2><p>Demonstrates how system policy, a user turn, and an assistant example shape the next response.</p></div></div>
-      <form data-endpoint="/api/prompts/roles/demo" data-json-field="question">
-        <label for="role-question">Follow-up question</label>
-        <textarea id="role-question" required minlength="3" placeholder="What information should I send to IT if that does not work?"></textarea>
-        <button type="submit">Run role demo <span>→</span></button>
-      </form>
-      <div class="output" aria-live="polite"></div>
-    </section>
   </main>
 
   <footer><span>Grounded by your IT knowledge base</span><span>Do not submit passwords, MFA codes, or secrets</span></footer>
   <script src="/static/app.js" defer></script>
 </body>
 </html>
-

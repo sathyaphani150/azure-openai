@@ -160,3 +160,35 @@ def test_quota_error_has_friendly_non_retryable_mapping() -> None:
     mapped = AzureOpenAIProvider._map_error(source)
     assert mapped.code == "azure_quota_exceeded"
     assert mapped.retryable is False
+
+
+@pytest.mark.asyncio
+@patch("helpdesk.clients.azure_openai.AsyncOpenAI")
+async def test_azure_web_search_invokes_responses_api(mock_client: MagicMock) -> None:
+    """web_search invokes Responses API with built-in web_search tool and parses annotations."""
+    annotation = SimpleNamespace(
+        type="url_citation",
+        url="https://example.com/docs",
+        title="Example Docs",
+    )
+    content_block = SimpleNamespace(type="output_text", annotations=[annotation])
+    message_item = SimpleNamespace(type="message", content=[content_block])
+    fake_response = SimpleNamespace(
+        output_text="Web search synthesized result.",
+        output=[message_item],
+        usage=SimpleNamespace(prompt_tokens=20, completion_tokens=30, total_tokens=50),
+    )
+    sdk = mock_client.return_value
+    sdk.responses.create = AsyncMock(return_value=fake_response)
+
+    provider = AzureOpenAIProvider(_settings("api_key"))
+    res = await provider.web_search("search query")
+
+    kwargs = sdk.responses.create.await_args.kwargs
+    assert kwargs["model"] == "chat-deployment"
+    assert kwargs["tools"] == [{"type": "web_search"}]
+    assert kwargs["input"] == "search query"
+    assert res.text == "Web search synthesized result."
+    assert res.sources[0].source == "Web Search: Example Docs"
+    assert res.sources[0].excerpt == "URL: https://example.com/docs"
+

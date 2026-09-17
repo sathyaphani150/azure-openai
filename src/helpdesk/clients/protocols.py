@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from helpdesk.schemas import UsageInfo
+from helpdesk.schemas import SourceReference, UsageInfo
 
 
 @dataclass(slots=True)
@@ -11,6 +11,15 @@ class AITextResponse:
     """Provider-independent text response and optional token usage."""
 
     text: str
+    usage: UsageInfo | None = None
+
+
+@dataclass(slots=True)
+class AIWebSearchResponse:
+    """Response from web search fallback including text, web citations, and token usage."""
+
+    text: str
+    sources: list[SourceReference]
     usage: UsageInfo | None = None
 
 
@@ -33,4 +42,7 @@ class AIProvider(Protocol):
         self, prompt: str, image_data_url: str, *, max_tokens: int = 900
     ) -> AITextResponse: ...
 
+    async def web_search(self, query: str) -> AIWebSearchResponse: ...
+
     async def close(self) -> None: ...
+

@@ -85,16 +85,18 @@ def test_question_returns_grounded_sources(tmp_path: Path) -> None:
     assert response.headers["x-request-id"]
 
 
-def test_unrelated_question_uses_no_answer_path(tmp_path: Path) -> None:
+def test_unrelated_question_triggers_web_search_fallback(tmp_path: Path) -> None:
     with TestClient(_app(tmp_path)) as client:
         response = client.post(
             "/api/questions",
             json={"question": "What is the reimbursement rule for overseas business travel?"},
         )
     assert response.status_code == 200
-    assert response.json()["grounded"] is False
-    assert response.json()["sources"] == []
-    assert "contact IT Support" in response.json()["answer"]
+    body = response.json()
+    assert body["grounded"] is True
+    assert body["sources"][0]["source"].startswith("Web Search:")
+    assert "No relevant information was found in the internal IT knowledge base" in body["answer"]
+
 
 
 def test_classification_comparison_endpoint(tmp_path: Path) -> None:

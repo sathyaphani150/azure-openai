@@ -4,8 +4,8 @@ import json
 import math
 import re
 
-from helpdesk.clients.protocols import AITextResponse
-from helpdesk.schemas import UsageInfo
+from helpdesk.clients.protocols import AITextResponse, AIWebSearchResponse
+from helpdesk.schemas import SourceReference, UsageInfo
 
 
 def _tokens(text: str) -> list[str]:
@@ -110,6 +110,40 @@ class FakeAIProvider:
             ),
         )
 
+    async def web_search(self, query: str) -> AIWebSearchResponse:
+        lower = query.lower()
+        if "web_search_fail" in lower:
+            from helpdesk.errors import AppError
+
+            raise AppError("Web search service unavailable", "web_search_failed", 502)
+        if "unreliable" in lower or "no_info" in lower:
+            text = "I could not find reliable information on the web for your query."
+            return AIWebSearchResponse(
+                text=text,
+                sources=[],
+                usage=UsageInfo(
+                    prompt_tokens=len(_tokens(query)),
+                    completion_tokens=len(_tokens(text)),
+                    total_tokens=len(_tokens(query)) + len(_tokens(text)),
+                ),
+            )
+
+        text = f"Public web results summary for question: {query}."
+        sources = [
+            SourceReference(
+                source="Web Search: support.example.com",
+                page=None,
+                score=1.0,
+                excerpt=f"Public web information regarding {query}.",
+            )
+        ]
+        usage = UsageInfo(
+            prompt_tokens=len(_tokens(query)),
+            completion_tokens=len(_tokens(text)),
+            total_tokens=len(_tokens(query)) + len(_tokens(text)),
+        )
+        return AIWebSearchResponse(text=text, sources=sources, usage=usage)
+
     @staticmethod
     def _category(text: str) -> str:
         rules = [
@@ -127,3 +161,4 @@ class FakeAIProvider:
 
     async def close(self) -> None:
         return None
+
