@@ -13,7 +13,6 @@ from helpdesk.retrieval.vector_store import (
 )
 from helpdesk.services.retrieval import RetrievalService
 
-
 RUNBOOK_FIXTURES = [
     (
         "vpn-troubleshooting.pdf",

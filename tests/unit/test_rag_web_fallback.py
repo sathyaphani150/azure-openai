@@ -1,13 +1,13 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
 from helpdesk.clients.fakes import FakeAIProvider
-from helpdesk.clients.protocols import AIWebSearchResponse
-from helpdesk.schemas import SourceReference, UsageInfo
-from helpdesk.services.rag import RAGService, WEB_FALLBACK_NOTICE
-from helpdesk.services.retrieval import RetrievalService
-from helpdesk.retrieval.vector_store import SearchResult
 from helpdesk.ingestion.models import DocumentChunk
+from helpdesk.retrieval.vector_store import SearchResult
+from helpdesk.schemas import UsageInfo
+from helpdesk.services.rag import WEB_FALLBACK_NOTICE, RAGService
+from helpdesk.services.retrieval import RetrievalService
 
 
 @pytest.mark.asyncio
